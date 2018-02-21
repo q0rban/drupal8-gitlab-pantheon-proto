@@ -1,0 +1,30 @@
+image: juampynr/drupal8ci:latest
+
+services:
+  - mariadb:10.3
+
+stages:
+  - build
+  - test
+  - deploy
+
+build:dev
+  stage: build
+  script:
+    - composer install
+
+code_sniffer:
+  stage: test
+  script:
+    - robo install:dependencies
+    - vendor/bin/phpcs --config-set installed_paths vendor/drupal/coder/coder_sniffer
+    - mkdir -p artifacts/phpcs
+    - vendor/bin/phpcs --standard=Drupal --report=junit --report-junit=artifacts/phpcs/phpcs.xml web/modules/custom
+    - vendor/bin/phpcs --standard=DrupalPractice --report=junit --report-junit=artifacts/phpcs/phpcs.xml web/modules/custom
+  tags:
+    - docker
+  artifacts:
+    paths:
+      - /var/www/html/artifacts/phpcs/phpcs.xml
+  dependencies:
+    - build:dev
