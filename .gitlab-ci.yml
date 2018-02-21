@@ -19,7 +19,6 @@ build:dev:
 code_sniffer:
   stage: test
   script:
-    - pwd
     - robo install:dependencies
     - vendor/bin/phpcs --config-set installed_paths vendor/drupal/coder/coder_sniffer
     - mkdir -p artifacts/phpcs
@@ -29,6 +28,6 @@ code_sniffer:
     - docker
   artifacts:
     paths:
-      - /var/www/html/artifacts/phpcs/phpcs.xml
+      - artifacts/phpcs/phpcs.xml
   dependencies:
     - build:dev
