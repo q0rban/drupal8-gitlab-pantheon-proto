@@ -3,18 +3,33 @@ image: juampynr/drupal8ci:latest
 variables:
   MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-services:
-  - mariadb:10.3
-
 stages:
   - build
   - test
   - deploy
 
-build:dev:
+build:test:
   stage: build
   script:
     - composer install
+  services:
+    - mariadb:10.3
+
+build:prod:
+  stage: build
+  script:
+    - composer install --no-dev
+
+deploy:prod:
+  stage: deploy
+  script:
+    - git add ./vendor --force
+    - git commit --author="GitLab CI <james+gitlab@lullabot.com>" -m "Compiling for $CI_COMMIT_SHA."
+    - scripts/ci-github-push.sh $CI_COMMIT_REF_NAME
+  dependencies:
+    - build:prod
+#  only:
+#    - tags
 
 code_sniffer:
   stage: test
@@ -24,10 +39,8 @@ code_sniffer:
     - mkdir -p artifacts/phpcs
     - vendor/bin/phpcs --standard=Drupal --report=junit --report-junit=artifacts/phpcs/phpcs.xml web/modules/custom
     - vendor/bin/phpcs --standard=DrupalPractice --report=junit --report-junit=artifacts/phpcs/phpcs.xml web/modules/custom
-  tags:
-    - docker
   artifacts:
     paths:
       - artifacts/phpcs/phpcs.xml
   dependencies:
-    - build:dev
+    - build:test
