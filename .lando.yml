@@ -1,0 +1,4 @@
+name: conf-cats-git-lab-prototype
+recipe: drupal8
+config:
+  webroot: web
