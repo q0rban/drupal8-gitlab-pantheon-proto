@@ -14,6 +14,10 @@ build:test:
     - composer install
   services:
     - mariadb:10.3
+  artifacts:
+    paths:
+      - vendor
+      - web
 
 build:prod:
   stage: build
@@ -27,6 +31,8 @@ build:prod:
       - web/themes
       - web/profiles
       - web/libraries
+#  only:
+#    - tags
 
 deploy:prod:
   stage: deploy
@@ -38,8 +44,8 @@ deploy:prod:
     - scripts/ci-github-push.sh $CI_COMMIT_REF_NAME
   dependencies:
     - build:prod
-#  only:
-#    - tags
+  variables:
+    DOCKER_DRIVER: overlay
 
 code_sniffer:
   stage: test
