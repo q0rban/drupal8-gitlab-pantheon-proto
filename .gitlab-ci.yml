@@ -1,5 +1,8 @@
 image: juampynr/drupal8ci:latest
 
+variables:
+  MYSQL_ALLOW_EMPTY_PASSWORD: 1
+
 services:
   - mariadb:10.3
 
