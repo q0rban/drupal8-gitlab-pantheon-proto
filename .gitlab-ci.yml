@@ -28,6 +28,9 @@ deploy:prod:
     - scripts/ci-github-push.sh $CI_COMMIT_REF_NAME
   dependencies:
     - build:prod
+  artifacts:
+    paths:
+      - vendor
 #  only:
 #    - tags
 
