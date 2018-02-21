@@ -8,7 +8,7 @@ stages:
   - test
   - deploy
 
-build:dev
+build:dev:
   stage: build
   script:
     - composer install
