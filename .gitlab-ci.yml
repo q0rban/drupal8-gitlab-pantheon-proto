@@ -19,18 +19,23 @@ build:prod:
   stage: build
   script:
     - composer install --no-dev
+  artifacts:
+    paths:
+      - vendor
+      - web/core
+      - web/modules
+      - web/themes
+      - web/profiles
+      - web/libraries
 
 deploy:prod:
   stage: deploy
   script:
-    - git add ./vendor --force
+    - git add ./vendor ./web --force
     - git commit --author="GitLab CI <james+gitlab@lullabot.com>" -m "Compiling for $CI_COMMIT_SHA."
     - scripts/ci-github-push.sh $CI_COMMIT_REF_NAME
   dependencies:
     - build:prod
-  artifacts:
-    paths:
-      - vendor
 #  only:
 #    - tags
 
