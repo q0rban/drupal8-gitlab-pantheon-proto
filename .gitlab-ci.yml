@@ -31,8 +31,10 @@ build:prod:
 deploy:prod:
   stage: deploy
   script:
+    - git config --global user.email "james+gitlab@lullabot.com"
+    - git config --global user.name "GitLab CI"
     - git add ./vendor ./web --force
-    - git commit --author="GitLab CI <james+gitlab@lullabot.com>" -m "Compiling for $CI_COMMIT_SHA."
+    - git commit -m "Compiling for $CI_COMMIT_SHA."
     - scripts/ci-github-push.sh $CI_COMMIT_REF_NAME
   dependencies:
     - build:prod
