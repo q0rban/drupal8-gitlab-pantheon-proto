@@ -67,6 +67,10 @@ function cleanup() {
 # removed for security purposes. See https://docs.gitlab.com/runner/security/
 trap cleanup ERR
 
+# Add commit author information.
+git config --global user.email "$COMMIT_AUTHOR_EMAIL"
+git config --global user.name "$COMMIT_AUTHOR_NAME"
+
 # Ensure the SSH_PRIVATE_KEY value is set. If it's not, please read the above
 # instructions on how to generate one.
 if [[ -z "$SSH_PRIVATE_KEY" ]]; then
