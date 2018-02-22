@@ -18,7 +18,7 @@ stages:
     - /.*\/compile$/
 
 # Template for composer managed dirs.
-.composer: &composer
+.composer_paths: &composer_paths
   - vendor
   - web/core
   - web/modules
@@ -30,9 +30,8 @@ build:prod:
   stage: build
   script:
     - composer install --no-dev
-  cache:
-    key: composer
-    paths: *composer
+  artifacts:
+    paths: &composer_paths
   <<: *onlytags
 
 deploy:prod:
@@ -43,14 +42,9 @@ deploy:prod:
     - build:prod
   variables:
     DOCKER_DRIVER: overlay
-    CI_DEBUG_TRACE: "true"
   environment:
     name: GitHub
     url: https://github.com/q0rban/drupal8-gitlab-pantheon-proto
-  cache:
-    key: composer
-    policy: pull
-    paths: *composer
   <<: *onlytags
 
 ## Build the testing environment.
