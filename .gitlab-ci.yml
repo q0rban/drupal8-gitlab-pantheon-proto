@@ -31,7 +31,7 @@ build:prod:
   script:
     - composer install --no-dev
   artifacts:
-    paths: &composer_paths
+    paths: *composer_paths
   <<: *onlytags
 
 deploy:prod:
