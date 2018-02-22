@@ -17,18 +17,22 @@ stages:
     # Also deploy branches that end in /compile
     - /.*\/compile$/
 
+# Template for composer managed dirs.
+.composer: &composer
+  - vendor
+  - web/core
+  - web/modules
+  - web/themes
+  - web/profiles
+  - web/libraries
+
 build:prod:
   stage: build
   script:
     - composer install --no-dev
   cache:
-    paths:
-      - vendor
-      - web/core
-      - web/modules
-      - web/themes
-      - web/profiles
-      - web/libraries
+    key: composer
+    paths: *composer
   <<: *onlytags
 
 deploy:prod:
@@ -43,6 +47,10 @@ deploy:prod:
   environment:
     name: GitHub
     url: https://github.com/q0rban/drupal8-gitlab-pantheon-proto
+  cache:
+    key: composer
+    policy: pull
+    paths: *composer
   <<: *onlytags
 
 ## Build the testing environment.
