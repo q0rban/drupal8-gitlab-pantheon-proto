@@ -42,6 +42,7 @@ deploy:prod:
     - build:prod
   variables:
     DOCKER_DRIVER: overlay
+    CI_DEBUG_TRACE: "true"
 
 code_sniffer:
   stage: test
