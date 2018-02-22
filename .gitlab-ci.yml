@@ -1,0 +1,137 @@
+image: juampynr/drupal8ci:latest
+
+stages:
+  - build
+  - test
+  - deploy
+
+# Template for only conditions for tags.
+.onlytags: &onlytags
+  only:
+    # Only deploy tags, or when other GitLab operations request one.
+    - tags
+    - triggers
+    - pipelines
+    - schedules
+    - web
+    # Also deploy branches that end in /compile
+    - /.*\/compile$/
+
+build:prod:
+  stage: build
+  script:
+    - composer install --no-dev
+  cache:
+    paths:
+      - vendor
+      - web/core
+      - web/modules
+      - web/themes
+      - web/profiles
+      - web/libraries
+  <<: *onlytags
+
+deploy:prod:
+  stage: deploy
+  script:
+    - scripts/ci-github-push.sh
+  dependencies:
+    - build:prod
+  variables:
+    DOCKER_DRIVER: overlay
+    CI_DEBUG_TRACE: "true"
+  environment:
+    name: GitHub
+    url: https://github.com/q0rban/drupal8-gitlab-pantheon-proto
+  <<: *onlytags
+
+## Build the testing environment.
+drupal8ci:build:
+  stage: build
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  script:
+    - composer install
+    - robo install:dependencies
+  services:
+    - mariadb:10.3
+    - selenium/standalone-chrome-debug:3.7.1-beryllium
+  artifacts:
+    paths:
+      - vendor
+      - web
+
+## Job to run Unit and Kernel tests.
+#drupal8ci:unit_kernel_tests:
+#  stage: test
+#  dependencies:
+#    - drupal8ci:build
+#  script:
+#    - apache2-foreground&
+#    - robo setup:drupal || true
+#    - cp .circleci/config/phpunit.xml web/core/
+#    - mkdir -p artifacts/phpunit
+#    - chmod -R 777 artifacts
+#    - cd web
+#    - sudo -E -u www-data ../vendor/bin/phpunit -c core --debug --verbose --log-junit ../artifacts/phpunit/phpunit.xml modules/custom
+#  artifacts:
+#    paths:
+#      - artifacts/phpunit
+
+## Job to run the update path and Behat tests.
+#drupal8ci:behat_tests:
+#  stage: test
+#  dependencies:
+#    - drupal8ci:build
+#  script:
+#    - robo setup:drupal || true
+#    - cd web
+#    # For a quick start, set the following environment variable to a URL that contains
+#    # a database dump. Alternativelly, give CircleCI access to your development environment
+#    # and use Drush site aliases to run `drush sql-sync`.
+#    - wget -O dump.sql $DB_DUMP_URL
+#    - ../vendor/bin/drush sql-cli < dump.sql
+#    - ../vendor/bin/drush updatedb -y -v
+#    - ../vendor/bin/drush config-import -y -v
+#    - apache2-foreground&
+#    - cp .circleci/config/behat.yml tests/
+#    - chown -R www-data:www-data /var/www/html/web/sites/default/files
+#    - vendor/bin/behat --verbose -c tests/behat.yml
+#  artifacts:
+#    paths:
+#      - artifacts/behat
+
+## Job to check coding standards.
+drupal8ci:code_sniffer:
+  stage: test
+  dependencies:
+    - drupal8ci:build
+  script:
+    - vendor/bin/phpcs --config-set installed_paths vendor/drupal/coder/coder_sniffer
+    - mkdir -p artifacts/phpcs
+    - vendor/bin/phpcs --standard=Drupal --report=junit --report-junit=artifacts/phpcs/phpcs.xml web/modules/custom
+    - vendor/bin/phpcs --standard=DrupalPractice --report=junit --report-junit=artifacts/phpcs/phpcs.xml web/modules/custom
+  artifacts:
+    paths:
+      - artifacts/phpcs/phpcs.xml
+
+## Job to check test coverage.
+drupal8ci:code_coverage:
+  stage: test
+  dependencies:
+    - drupal8ci:build
+  variables:
+    SIMPLETEST_BASE_URL: "http://localhost"
+    SIMPLETEST_DB: "sqlite://localhost//tmp/drupal.sqlite"
+    BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/sites/simpletest"
+  script:
+    - robo setup:drupal || true
+    - cp .circleci/config/phpunit.xml web/core/
+    - mkdir -p artifacts/coverage-xml
+    - mkdir -p artifacts/coverage-html
+    - chmod -R 777 artifacts
+    - cd web
+    - timeout 60m sudo -E -u www-data ../vendor/bin/phpunit --verbose --debug -c core --coverage-xml ../artifacts/coverage-xml --coverage-html ../artifacts/coverage-html --testsuite nonfunctional modules/custom
+  artifacts:
+    paths:
+      - artifacts
